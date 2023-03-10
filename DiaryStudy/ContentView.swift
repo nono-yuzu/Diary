@@ -9,32 +9,46 @@ import SwiftUI
 import FSCalendar
 
 struct ContentView: View {
+    @State private var selectedDate: Date?
+    @State  var selectedDate_2: Date = Date()
+    @State private var showPicker = false
     var body: some View {
         VStack {
-            CalendarTestView()
+            CalendarTestView(selectedDate: $selectedDate)
                 .frame(width: 500, height: 500)
             Spacer()
-            Text("hhjog")
-            
-            
+            if let date = selectedDate {
+                Label(getFormattedDate(date: date), systemImage: "calendar")
+            } else {
+                Text("No date selected")
+            }
+            Button("勉強時間を追加する"){
+                showPicker
+            }
+            if showPicker {
+                DatePicker("Date",
+                              selection: $selectedDate_2,
+                              displayedComponents: [.hourAndMinute]
+                            )
+
+            }
+           
             
         }
         .padding()
     }
     
-    func calendar(_ calendar: FSCalendar, didset date: Date, at monthPosition: FSCalendarMonthPosition) {
-        
-        let tmpCalendar = Calendar(identifier: .gregorian)
-        
-        let month = tmpCalendar.component(.month, from: date)
-        
-        let day = tmpCalendar.component(.day, from: date)
-        
-        let m = String(format: "%02d", month)
-        let d = String(format: "%02d", day)
-        
-        var testText = "\(m)/\(d)"
-        
+    func picker() {
+        DatePicker("Date",
+                      selection: $selectedDate_2,
+                      displayedComponents: [.hourAndMinute]
+                    )
+    }
+    
+    private func getFormattedDate(date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM/dd"
+        return formatter.string(from: date)
     }
 }
 
@@ -45,16 +59,31 @@ struct ContentView_Previews: PreviewProvider {
 }
 
 struct CalendarTestView: UIViewRepresentable {
+    @Binding var selectedDate: Date?
+    
     func makeUIView(context: Context) -> UIView {
-        typealias UIViewType = FSCalendar
         let fscalendar = FSCalendar()
-        
+        fscalendar.delegate = context.coordinator
         return fscalendar
     }
     
     func updateUIView(_ uiView: UIView, context: Context) {
-        
+        // No update needed
     }
     
+    func makeCoordinator() -> Coordinator {
+        Coordinator(selectedDate: $selectedDate)
+    }
     
+    class Coordinator: NSObject, FSCalendarDelegate {
+        @Binding var selectedDate: Date?
+        
+        init(selectedDate: Binding<Date?>) {
+            self._selectedDate = selectedDate
+        }
+        
+        func calendar(_ calendar: FSCalendar, didSelect date: Date, at monthPosition: FSCalendarMonthPosition) {
+            selectedDate = date
+        }
+    }
 }
